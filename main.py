@@ -19,8 +19,10 @@ def add_link():
             soup = BeautifulSoup(r, 'html.parser')
             date = soup.find("span", {"data-cy": "ad-posted-at"}).text
             date = format_date(date)
-            # db.insert({'link': link})
+            db.insert({'link': link,
+                       'date': date})
             print(date)
+
 
 def check_links():
     pass
