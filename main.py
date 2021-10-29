@@ -44,7 +44,7 @@ def add_link():
                 does_exist(auction_data)
 
 
-def update_db(auction_data, search_result):
+def check_and_update_db(auction_data, search_result):
     old_title = search_result[0]['title']
     old_price = search_result[0]['price']
     old_date = search_result[0]['date']
@@ -70,6 +70,9 @@ def update_db(auction_data, search_result):
         new_auction_data['date'] = new_date
 
     if len(new_auction_data) > 1:
+        print(f"Old price/new price: {old_price} / {new_price}")
+        print(f"Old title/new title: {old_title} / {new_title}")
+        print(f"Old date/new date: {old_date} / {new_date}")
         user_choice = input("Some data in auction has been changed. Do you want to update database? (Y/N)")
         while True:
             if user_choice.lower() == "n":
@@ -88,7 +91,7 @@ def does_exist(auction_data: dict):
     if len(search_result) > 0:
         print("Already exists in database!")
 
-        update_db(auction_data, search_result)
+        check_and_update_db(auction_data, search_result)
 
     else:
         db.insert(auction_data)
@@ -96,12 +99,38 @@ def does_exist(auction_data: dict):
 
 def check_links():
     for record in db.all():
-        r = requests.get(record['link'])
+        r = requests.get(record['link']).content
+        soup = BeautifulSoup(r, 'html.parser')
+        title = soup.find("h1", {"data-cy": "ad_title"}).text
+        print("Checking now:", title)
+
+        date = soup.find("span", {"data-cy": "ad-posted-at"})
+
+        if date is not None:
+            date = date.text
+            date = format_date(date)
+
+            price_div = soup.find("div", {"data-testid": "ad-price-container"})
+            price = int(''.join(re.findall(r'[0-9]', price_div.find("h3").text)))
+
+            auction_data = {
+                'title': title,
+                'price': price,
+                'date': date,
+                'link': record['link']
+            }
+
+            check_and_update_db(auction_data, [record, ])
+        else:
+            print("Auction is expired. Last data:\n"
+                  f"Title: {record['title']}\n"
+                  f"Price: {record['price']}\n"
+                  f"Date: {record['date']}")
 
 
 if __name__ == "__main__":
     while True:
-        start = int(input("1 - add link\n2 - check all links"))
+        start = int(input("1 - add link\n2 - check all links\nEnter: "))
         match start:
             case 1:
                 add_link()
