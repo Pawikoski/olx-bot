@@ -1,4 +1,4 @@
-from tinydb import TinyDB, Query
+from tinydb import TinyDB, Query, where
 from bs4 import BeautifulSoup
 from date import format_date
 import requests
@@ -60,7 +60,7 @@ def does_exist(auction_data: dict):
         new_date = auction_data['date']
 
         new_auction_data = dict()
-        new_auction_data['link']  = link
+        new_auction_data['link'] = link
 
         if old_title != new_title:
             print("Title has been changed.")
@@ -82,14 +82,11 @@ def does_exist(auction_data: dict):
                     break
                 elif user_choice.lower() == "y":
                     print("Database will be updated")
-                    # db change czy cos tutaj
+                    db.update({'title': new_title, 'price': new_price, 'date': new_date}, where('link') == link)
                     break
 
     else:
         db.insert(auction_data)
-
-
-
 
 
 def check_links():
